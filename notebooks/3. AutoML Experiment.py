@@ -70,6 +70,7 @@ dbutils.data.summarize(training_df)
 
 # COMMAND ----------
 
+#%pip install deepchecks
 from deepchecks.tabular.suites import full_suite
 from deepchecks.tabular import Dataset
 
@@ -78,8 +79,10 @@ train_dataset = Dataset(train_df.toPandas(), label="new_cases", features=['recor
 test_dataset = Dataset(test_df.toPandas(), label="new_cases", features=['record_date', 'total_vaccinations', 'people_vaccinated', 'people_fully_vaccinated', 'new_vaccinations', 'population', 'population_density', 'median_age', 'aged_65_older'], cat_features=['record_date'])
 
 suite = full_suite()
-suite.run(train_dataset=train_dataset, test_dataset=test_dataset)
+suite_results = suite.run(train_dataset=train_dataset, test_dataset=test_dataset)
+mlflow.log_artifact(suite_results.save_as_html())
 
+suite_results
 
 # COMMAND ----------
 
@@ -100,10 +103,10 @@ summary = automl.regress(train_df, target_col='new_cases', data_dir='dbfs:/autom
 
 # COMMAND ----------
 
-#run_id = summary.best_trial.mlflow_run_id
-#model_uri = "runs:/"+run_id+"/model"
+run_id = summary.best_trial.mlflow_run_id
+model_uri = "runs:/"+run_id+"/model"
 #a456f1238dff4869a92ea530ed2768e0/
-model_uri = "runs:/a456f1238dff4869a92ea530ed2768e0/model"
+#model_uri = "runs:/a456f1238dff4869a92ea530ed2768e0/model"
 #run_id
 
 # COMMAND ----------
