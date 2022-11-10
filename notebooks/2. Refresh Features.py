@@ -5,7 +5,7 @@ from databricks import feature_store
 fs = feature_store.FeatureStoreClient()
 
 # Create a Spark Dataframe
-df = spark.sql("select * from hive_metastore.default.india_covid_vaccination_delta_table")
+df = spark.sql("select * from hive_metastore.default.india_covid_vaccination_data_transform")
 
 # Create Dataframes of each feature set
 vax_features_df = df.select("date","total_vaccinations", "people_vaccinated", "people_fully_vaccinated", "new_vaccinations")

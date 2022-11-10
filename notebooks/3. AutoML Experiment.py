@@ -14,7 +14,7 @@ from mlflow.entities.model_registry.model_version_status import ModelVersionStat
 
 # COMMAND ----------
 
-df = spark.sql('select date, new_cases, new_deaths, new_tests from hive_metastore.default.india_covid_vaccination_delta_table')
+df = spark.sql('select record_date, new_cases, new_deaths, new_tests from hive_metastore.default.india_covid_vaccination_data_transform')
 
 # COMMAND ----------
 
@@ -30,12 +30,12 @@ feature_lookups = [
     FeatureLookup(
         table_name = 'feature_store_india_covid.vaccination_features',
         feature_names = ["total_vaccinations", "people_vaccinated", "people_fully_vaccinated", "new_vaccinations"],
-        lookup_key = 'date'
+        lookup_key = 'record_date'
     ),
     FeatureLookup(
         table_name = "feature_store_india_covid.population_features",
         feature_names=["population", "population_density", "aged_65_older", "median_age"],
-        lookup_key = 'date'
+        lookup_key = 'record_date'
     )
 ]
 
@@ -73,9 +73,9 @@ dbutils.data.summarize(training_df)
 from deepchecks.tabular.suites import full_suite
 from deepchecks.tabular import Dataset
 
-train_dataset = Dataset(train_df.toPandas(), label="new_cases", features=['date', 'total_vaccinations', 'people_vaccinated', 'people_fully_vaccinated', 'new_vaccinations', 'population', 'population_density', 'median_age', 'aged_65_older'], cat_features=['date'])
+train_dataset = Dataset(train_df.toPandas(), label="new_cases", features=['record_date', 'total_vaccinations', 'people_vaccinated', 'people_fully_vaccinated', 'new_vaccinations', 'population', 'population_density', 'median_age', 'aged_65_older'], cat_features=['record_date'])
 
-test_dataset = Dataset(test_df.toPandas(), label="new_cases", features=['date', 'total_vaccinations', 'people_vaccinated', 'people_fully_vaccinated', 'new_vaccinations', 'population', 'population_density', 'median_age', 'aged_65_older'], cat_features=['date'])
+test_dataset = Dataset(test_df.toPandas(), label="new_cases", features=['record_date', 'total_vaccinations', 'people_vaccinated', 'people_fully_vaccinated', 'new_vaccinations', 'population', 'population_density', 'median_age', 'aged_65_older'], cat_features=['record_date'])
 
 suite = full_suite()
 suite.run(train_dataset=train_dataset, test_dataset=test_dataset)
@@ -146,3 +146,35 @@ def wait_until_ready(model_name, model_version):
     time.sleep(1)
 
 wait_until_ready(model_details.name, model_details.version)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Promote latest model version to staging
+
+# COMMAND ----------
+
+from mlflow.tracking.client import MlflowClient
+client = MlflowClient()
+
+new_model_version = client.get_latest_versions(model_name)
+
+client.transition_model_version_stage(
+  name=model_name,
+  version=new_model_version[0].version,
+  stage="Staging",
+)
+
+
+# COMMAND ----------
+
+client.transition_model_version_stage(
+  name=model_name,
+  version=new_model_version[0].version,
+  stage="Production",
+)
+
+
+# COMMAND ----------
+
+

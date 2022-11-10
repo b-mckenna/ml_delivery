@@ -5,21 +5,24 @@ from databricks import feature_store
 # COMMAND ----------
 
 # Create a Spark Dataframe
-df = spark.sql("select * from hive_metastore.default.india_covid_vaccination_delta_table")
+df = spark.sql("select * from hive_metastore.default.india_covid_vaccination_data_transform")
 
 # Create Dataframes of each feature set
-vax_features_df = df.select("date","total_vaccinations", "people_vaccinated", "people_fully_vaccinated", "new_vaccinations")
+vax_features_df = df.select("record_date","total_vaccinations", "people_vaccinated", "people_fully_vaccinated", "new_vaccinations")
 display(vax_features_df)
 
-pop_df = df.select("date","population", "population_density", "aged_65_older", "median_age")
+pop_df = df.select("record_date","population", "population_density", "aged_65_older", "median_age")
 
 
 # COMMAND ----------
 
-# Create the Feature Store Database
-%sql
-CREATE DATABASE IF NOT EXISTS feature_store_india_covid;
+# MAGIC %sql
+# MAGIC CREATE DATABASE IF NOT EXISTS feature_store_india_covid;
 
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC describe database feature_store_india_covid;
 
 # COMMAND ----------
 
@@ -31,17 +34,17 @@ fs = feature_store.FeatureStoreClient()
 # Create tables for each feature set and load the dataframes
 fs.create_table(
     name="feature_store_india_covid.vaccination_features",
-    primary_keys=["date"],
+    primary_keys=["record_date"],
     df=vax_features_df,
-    partition_columns="date",
+    partition_columns="record_date",
     description="Covid cases in India. Vaccination features"
 )
 
 fs.create_table(
     name="feature_store_india_covid.population_features",
-    primary_keys=["date"],
+    primary_keys=["record_date"],
     df=pop_df,
-    partition_columns="date",
+    partition_columns="record_date",
     description="Covid cases in India. Population features"
 )
 
@@ -49,8 +52,8 @@ fs.create_table(
 # COMMAND ----------
 
 # Load dataframe with lookup keys
-df1 = spark.sql("select * from hive_metastore.default.india_covid_vaccination_delta_table")
-training_df = df1.select("date", "new_cases", "new_deaths", "new_tests", "population", "population_density", "median_age", "aged_65_older")
+df1 = spark.sql("select * from hive_metastore.default.india_covid_vaccination_data_transform")
+training_df = df1.select("record_date", "new_cases", "new_deaths", "new_tests", "population", "population_density", "median_age", "aged_65_older")
 
 # COMMAND ----------
 
@@ -63,7 +66,7 @@ feature_lookups = [
     FeatureLookup(
       table_name = 'feature_store_india_covid.vaccination_features',
       feature_names = ["total_vaccinations", "people_vaccinated", "people_fully_vaccinated", "new_vaccinations"],
-      lookup_key = 'date'
+      lookup_key = 'record_date'
     )
   ]
 
