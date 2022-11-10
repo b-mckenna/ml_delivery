@@ -1,5 +1,9 @@
 # Databricks notebook source
+from databricks import feature_store
+
 # Scheduled job to update feature sets
+fs = feature_store.FeatureStoreClient()
+
 # Create a Spark Dataframe
 df = spark.sql("select * from hive_metastore.default.india_covid_vaccination_delta_table")
 
@@ -24,3 +28,7 @@ fs.write_table(
  df=pop_df,
  mode="merge",
 )
+
+# COMMAND ----------
+
+

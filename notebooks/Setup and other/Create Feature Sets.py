@@ -83,7 +83,8 @@ training_df = training_set.load_df()
 
 # COMMAND ----------
 
-train_df, test_df = training_df.randomSplit([0.99, 0.01], seed=42)
+dbutils.data.summarize(training_df)
+#train_df, test_df = training_df.randomSplit([0.99, 0.01], seed=42)
 
 # COMMAND ----------
 
@@ -102,8 +103,4 @@ dataset = Dataset(df, label="new_cases", features=['date', 'total_vaccinations',
 
 suite = full_suite()
 suite.run(dataset)
-
-
-# COMMAND ----------
-
 
